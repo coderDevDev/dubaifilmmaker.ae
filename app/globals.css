@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* * {
+    cursor: none;
+  } */
+
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #000;
+    overflow: hidden;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  #__next {
+    height: 100%;
+  }
+
+  * {
+    will-change: auto;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  /* Text reveal animation classes */
+  .text-wrapper {
+    overflow: hidden;
+    height: 1.5em;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .text-container {
+    transition: transform 0.4s ease;
+  }
+
+  .hover-text {
+    font-size: 1rem;
+    line-height: 1.5em;
+    display: block;
+    height: 1.5em;
+    font-weight: 600;
+  }
+
+  .text-wrapper:hover .text-container {
+    transform: translateY(-1.5em);
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .backdrop-blur-custom {
+    backdrop-filter: blur(10px);
+  }
+
+  .gpu-accelerated {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  .full-height {
+    height: 100vh;
+    min-height: 100vh;
+  }
+}
+
+/* Hide scrollbars completely */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Performance optimizations */
+.parallax-container {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* Video optimization for fullscreen */
+video {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Smooth transitions with hardware acceleration */
+section {
+  height: 100vh;
+  min-height: 100vh;
+  position: absolute;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hide default cursor on interactive elements */
+/* a,
+button,
+[role="button"] {
+  cursor: none !important;
+} */
+
+/* Enhanced performance for mobile */
+@media (max-width: 768px) {
+  .gpu-accelerated {
+    transform: translate3d(0, 0, 0);
+  }
+}
