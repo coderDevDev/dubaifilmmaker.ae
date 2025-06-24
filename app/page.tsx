@@ -27,27 +27,7 @@ export default function HomePage() {
     {
       id: 'showcase',
       videoUrl: 'https://assets.curbcph.tv/Click%20Click_Cutdown_3%202.mp4',
-      title: 'ECONOMIC\\nVISION',
-      subtitle: 'Abu Dhabi Economic Vision',
-      category: 'Strategy',
-      description: 'Building a Sustainable Economy',
-      details:
-        "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
-    },
-    {
-      id: 'showcase',
-      videoUrl: 'https://assets.curbcph.tv/Click%20Click_Cutdown_3%202.mp4',
-      title: 'ECONOMIC\\nVISION',
-      subtitle: 'Abu Dhabi Economic Vision',
-      category: 'Strategy',
-      description: 'Building a Sustainable Economy',
-      details:
-        "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
-    },
-    {
-      id: 'showcase',
-      videoUrl: 'https://assets.curbcph.tv/Click%20Click_Cutdown_3%202.mp4',
-      title: 'ECONOMIC\\nVISION',
+      title: 'THE ABU DHABI PLAN - REEM',
       subtitle: 'Abu Dhabi Economic Vision',
       category: 'Strategy',
       description: 'Building a Sustainable Economy',
