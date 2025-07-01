@@ -151,6 +151,11 @@ function VideoSection({
 
   // Calculate section position and transforms for immediate curtain effect
   const getTransform = () => {
+    // During initial loading, first section starts below viewport
+    if (!isLoaded && sectionIndex === 0) {
+      return 'translateY(100%)';
+    }
+
     if (sectionIndex === currentSection) {
       return 'translateY(0)';
     } else if (sectionIndex === currentSection + 1) {
@@ -179,16 +184,10 @@ function VideoSection({
     }
   };
 
-  const getScale = () => {
-    if (sectionIndex === currentSection) {
-      return 1 + transitionProgress * 0.02;
-    } else if (
-      sectionIndex === currentSection + 1 ||
-      sectionIndex === currentSection - 1
-    ) {
-      return 0.98 + transitionProgress * 0.02;
-    }
-    return 1;
+  // Video stays fixed - no scale effect
+  const getVideoTransform = () => {
+    // Video background stays completely fixed in position
+    return 'translateY(0) scale(1)';
   };
 
   // Pre-calculated positions for consistent rendering
@@ -222,7 +221,7 @@ function VideoSection({
       <div
         className="absolute inset-0"
         style={{
-          transform: `scale(${getScale()})`
+          transform: getVideoTransform()
         }}>
         <video
           ref={videoRef}
@@ -270,9 +269,7 @@ function VideoSection({
       <div
         className="absolute inset-0 z-10 flex flex-col justify-between p-6 md:p-12"
         style={{
-          transform: `translateY(${
-            transitionProgress * (sectionIndex === currentSection ? -10 : 10)
-          }px)`
+          transform: 'translateY(0)' // Content stays fixed like the video
         }}>
         {/* Main Content */}
         <div className="flex-1 flex items-center">

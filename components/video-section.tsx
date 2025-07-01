@@ -36,6 +36,7 @@ export function VideoSection({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   // Start video playback immediately when loaded, regardless of active state
   useEffect(() => {
@@ -65,6 +66,11 @@ export function VideoSection({
 
   // Calculate section position and transforms for immediate curtain effect
   const getTransform = () => {
+    // During initial loading, first section starts below viewport
+    if (!isLoaded && sectionIndex === 0) {
+      return 'translateY(100%)';
+    }
+
     if (sectionIndex === currentSection) {
       // Current section - stays in place
       return 'translateY(0)';
@@ -102,17 +108,10 @@ export function VideoSection({
     }
   };
 
-  // Subtle parallax scale for depth (reduced effect)
-  const getScale = () => {
-    if (sectionIndex === currentSection) {
-      return 1 + transitionProgress * 0.02; // Very subtle scale
-    } else if (
-      sectionIndex === currentSection + 1 ||
-      sectionIndex === currentSection - 1
-    ) {
-      return 0.98 + transitionProgress * 0.02; // Subtle scale up
-    }
-    return 1;
+  // Video stays fixed - no scale effect
+  const getVideoTransform = () => {
+    // Video background stays completely fixed in position
+    return 'translateY(0) scale(1)';
   };
 
   // Pre-calculated positions for consistent rendering (prevents hydration issues)
@@ -134,6 +133,29 @@ export function VideoSection({
     { left: '65%', top: '45%', delay: 7 }
   ];
 
+  const triggerInitialTransition = () => {
+    setIsScrolling(true);
+
+    let progress = 0;
+    const duration = 1000;
+    const startTime = Date.now();
+
+    const animateTransition = () => {
+      const elapsed = Date.now() - startTime;
+      progress = Math.min(elapsed / duration, 1);
+
+      const easedProgress = 1 - Math.pow(1 - progress, 2);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateTransition);
+      } else {
+        setIsScrolling(false);
+      }
+    };
+
+    requestAnimationFrame(animateTransition);
+  };
+
   return (
     <section
       className="absolute inset-0 h-screen min-h-screen overflow-hidden"
@@ -146,7 +168,7 @@ export function VideoSection({
       <div
         className="absolute inset-0"
         style={{
-          transform: `scale(${getScale()})`
+          transform: getVideoTransform()
         }}>
         <video
           ref={videoRef}
@@ -156,7 +178,12 @@ export function VideoSection({
           loop
           playsInline
           preload="auto" // Changed to auto for immediate loading
-          onLoadedData={() => setVideoLoaded(true)}
+          onLoadedData={() => {
+            setVideoLoaded(true);
+            // setIsLoading(false);
+            // setIsLoaded(true);
+            triggerInitialTransition();
+          }}
           onError={() => console.log('Video failed to load:', videoUrl)}
           // Ensure video keeps playing even when not visible
           style={{
@@ -198,77 +225,81 @@ export function VideoSection({
       <div
         className="absolute inset-0 z-10 flex flex-col justify-between p-6 md:p-12"
         style={{
-          transform: `translateY(${
-            transitionProgress * (sectionIndex === currentSection ? -10 : 10)
-          }px)`
+          transform: 'translateY(0)' // Content stays fixed like the video
         }}>
         {/* Main Content */}
         <div className="flex-1 flex items-center">
           <div className="w-full">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-              {/* Left Title */}
-              <div className="md:col-span-1">
-                <h2
-                  className={`text-4xl md:text-1xl font-bold text-white tracking-wide transform transition-all duration-1500 delay-200 ${
-                    isActive && isLoaded
-                      ? 'translate-y-0 opacity-100'
-                      : 'translate-y-20 opacity-0'
-                  }`}>
-                  {title}
-                </h2>
+            <div className="grid grid-cols-1 md:[grid-template-columns:auto_1fr_auto] items-end w-full gap-x-8">
+              {/* Left: Headline */}
+              <div className="flex items-end">
                 <div
-                  className={`w-full h-px bg-white/30 mt-4 transform transition-all duration-1500 delay-300 origin-left ${
-                    isActive && isLoaded ? 'scale-x-100' : 'scale-x-0'
-                  }`}
-                />
-
-                {/* <p
-                  className={`text-white/60 text-sm mt-2 transform transition-all duration-1500 delay-500 ${
-                    isActive && isLoaded
-                      ? 'translate-y-0 opacity-100'
-                      : 'translate-y-10 opacity-0'
-                  }`}>
-                  {category}
-                </p> */}
+                  className="px-2 py-5 border-b  border-white/30" /* remove border for prod */
+                >
+                  <span
+                    className="text-white font-bold uppercase"
+                    style={{
+                      fontFamily: `'Oswald', 'Impact', 'Arial Narrow', Arial, sans-serif`,
+                      fontWeight: 700,
+                      fontSize: 'clamp(1.5rem, 3.5vw, 2.8rem)',
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.04em',
+                      whiteSpace: 'nowrap'
+                    }}>
+                    {title}
+                  </span>
+                </div>
               </div>
-
-              {/* Center Title */}
-              <div className="md:col-span-1 text-center">
-                <h2
-                  className={`text-1xl md:text-1xl font-light text-white tracking-wide transform transition-all duration-1500 delay-200 ${
-                    isActive && isLoaded
-                      ? 'translate-y-0 opacity-100'
-                      : 'translate-y-20 opacity-0'
-                  }`}>
-                  {subtitle}
-                </h2>
-
+              {/* Center: Category above Subheadline */}
+              <div className="flex flex-col items-start gap-1">
+                <div className="px-2 py-0.5 " /* remove border for prod */>
+                  <span
+                    className="text-white font-bold uppercase"
+                    style={{
+                      fontFamily: `'Oswald', 'Arial Narrow', Arial, sans-serif`,
+                      fontWeight: 700,
+                      fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)',
+                      letterSpacing: '0.02em'
+                    }}>
+                    {category}
+                  </span>
+                </div>
                 <div
-                  className={`w-full h-px bg-white/30 mt-4 transform transition-all duration-1500 delay-300 origin-left ${
-                    isActive && isLoaded ? 'scale-x-100' : 'scale-x-0'
-                  }`}
-                />
+                  className="px-2 py-5 border-b border-white/50" /* remove border for prod */
+                >
+                  <span
+                    className="text-white"
+                    style={{
+                      fontFamily: `'Playfair Display', 'Georgia', 'Times New Roman', serif`,
+                      fontWeight: 700,
+                      fontSize: 'clamp(1.1rem, 2.5vw, 2.2rem)',
+                      lineHeight: 1.1,
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
+                    }}>
+                    {subtitle}
+                  </span>
+                </div>
               </div>
-
-              {/* Right Indicator */}
-              <div className="md:col-span-1 flex justify-end">
-                <div
-                  className={`text-white/60 text-sm transform transition-all duration-1500 delay-700 ${
-                    isActive && isLoaded
-                      ? 'translate-x-0 opacity-100'
-                      : 'translate-x-10 opacity-0'
-                  }`}>
-                  {String(sectionIndex + 1).padStart(2, '0')}{' '}
-                  <span className="mx-2">/</span>{' '}
-                  {String(totalSections).padStart(2, '0')}
-                  <div
-                    className={`w-full h-px bg-white/30 mt-4 transform transition-all duration-1500 delay-300 origin-left ${
-                      isActive && isLoaded ? 'scale-x-100' : 'scale-x-0'
-                    }`}
-                  />
+              {/* Right: Section Indicator */}
+              <div className="flex items-center justify-center">
+                <div className="px-6 py-3 border-b border-white/20">
+                  <span
+                    className="text-white font-bold flex items-center gap-10"
+                    style={{
+                      fontFamily: `'Oswald', 'Arial Narrow', Arial, sans-serif`,
+                      fontWeight: 700,
+                      fontSize: 'clamp(1rem, 2vw, 1.5rem)',
+                      letterSpacing: '0.1em'
+                    }}>
+                    <span>{String(sectionIndex + 1).padStart(2, '0')}</span>
+                    <span className="text-white/60">/</span>
+                    <span>{String(totalSections).padStart(2, '0')}</span>
+                  </span>
                 </div>
               </div>
             </div>
+            {/* Horizontal line below */}
           </div>
         </div>
 
