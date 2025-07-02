@@ -16,6 +16,7 @@ interface VideoSectionProps {
   isActive: boolean;
   isLoaded: boolean;
   totalSections: number;
+  scrollDirection: 'down' | 'up';
 }
 
 export function VideoSection({
@@ -31,7 +32,8 @@ export function VideoSection({
   transitionProgress,
   isActive,
   isLoaded,
-  totalSections
+  totalSections,
+  scrollDirection
 }: VideoSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
@@ -156,12 +158,19 @@ export function VideoSection({
     requestAnimationFrame(animateTransition);
   };
 
+  // Refined visibility logic: only outgoing and incoming sections are visible
+  const isVisible =
+    sectionIndex === currentSection ||
+    (scrollDirection === 'down' && sectionIndex === currentSection + 1) ||
+    (scrollDirection === 'up' && sectionIndex === currentSection - 1);
+
   return (
     <section
       className="absolute inset-0 h-screen min-h-screen overflow-hidden"
       style={{
         transform: getTransform(),
         zIndex: getZIndex(),
+        display: isVisible ? 'block' : 'none',
         opacity: 1 // Always fully opaque - no fade effects
       }}>
       {/* Video Background Layer */}

@@ -47,6 +47,16 @@ export default function HomePage() {
       description: 'Building a Sustainable Economy',
       details:
         "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
+    },
+    {
+      id: 'showcase',
+      videoUrl: 'https://assets.curbcph.tv/Hermes%202.mp4',
+      title: 'THE ABU DHABI PLAN - REEM',
+      subtitle: 'Abu Dhabi Economic Vision',
+      category: 'Strategy',
+      description: 'Building a Sustainable Economy',
+      details:
+        "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
     }
   ];
 
@@ -199,6 +209,42 @@ export default function HomePage() {
     }
   };
 
+  const getTransform = () => {
+    if (sectionIndex === currentSection) {
+      // Outgoing section
+      if (isScrolling) {
+        return scrollDirection === 'down'
+          ? `translateY(-${transitionProgress * 100}%)`
+          : `translateY(${transitionProgress * 100}%)`;
+      }
+      return 'translateY(0)';
+    }
+    if (
+      (scrollDirection === 'down' && sectionIndex === currentSection + 1) ||
+      (scrollDirection === 'up' && sectionIndex === currentSection - 1)
+    ) {
+      // Incoming section
+      return scrollDirection === 'down'
+        ? `translateY(${100 - transitionProgress * 100}%)`
+        : `translateY(-${100 - transitionProgress * 100}%)`;
+    }
+    // All other sections are hidden
+    return 'translateY(100%)';
+  };
+
+  const getZIndex = () => {
+    if (
+      (scrollDirection === 'down' && sectionIndex === currentSection + 1) ||
+      (scrollDirection === 'up' && sectionIndex === currentSection - 1)
+    ) {
+      return 30; // Incoming section on top
+    }
+    if (sectionIndex === currentSection) {
+      return 20; // Outgoing section below
+    }
+    return 0;
+  };
+
   return (
     <div ref={containerRef} className="relative h-screen overflow-hidden">
       {/* Loader stays visible and fades out as curtain animates */}
@@ -315,7 +361,7 @@ export default function HomePage() {
             <CustomCursor />
             {videoSections.map((section, index) => (
               <VideoSection
-                key={section.id}
+                key={`${section.id}-${index}`} // Add index to key
                 {...section}
                 sectionIndex={index}
                 currentSection={currentSection}
@@ -327,6 +373,10 @@ export default function HomePage() {
                 isActive={index === currentSection}
                 isLoaded={isLoaded}
                 totalSections={videoSections.length}
+                scrollDirection={scrollDirection}
+                isScrolling={isScrolling}
+                getTransform={getTransform}
+                getZIndex={getZIndex}
               />
             ))}
           </main>
