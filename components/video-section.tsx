@@ -66,7 +66,7 @@ export function VideoSection({
     }
   }, [videoLoaded, hasStartedPlaying, id]);
 
-  // Calculate section position and transforms for immediate curtain effect
+  // Calculate section position and transforms for pinned background effect
   const getTransform = () => {
     // During initial loading, first section starts below viewport
     if (!isLoaded && sectionIndex === 0) {
@@ -74,38 +74,56 @@ export function VideoSection({
     }
 
     if (sectionIndex === currentSection) {
-      // Current section - stays in place
+      // Current section - stays in place or slides away
+      if (scrollDirection === 'up' && transitionProgress > 0) {
+        // When scrolling up, current section slides down to reveal previous section
+        return `translateY(${transitionProgress * 100}%)`;
+      }
       return 'translateY(0)';
-    } else if (sectionIndex === currentSection + 1) {
+    } else if (
+      scrollDirection === 'down' &&
+      sectionIndex === currentSection + 1
+    ) {
       // Next section (scrolling down) - slides up from bottom
       const translateY = 100 - transitionProgress * 100;
       return `translateY(${translateY}%)`;
-    } else if (sectionIndex === currentSection - 1) {
-      // Previous section (scrolling up) - slides down from top
-      const translateY = -(100 - transitionProgress * 100);
-      return `translateY(${translateY}%)`;
+    } else if (
+      scrollDirection === 'up' &&
+      sectionIndex === currentSection - 1
+    ) {
+      // Previous section (scrolling up) - stays pinned in place (already there)
+      return 'translateY(0)';
     } else if (sectionIndex > currentSection) {
       // Future sections - stay below
       return 'translateY(100%)';
     } else {
-      // Past sections - stay above
-      return 'translateY(-100%)';
+      // Past sections - stay pinned in place (background)
+      return 'translateY(0)';
     }
   };
 
-  // Get z-index for proper layering (no opacity changes)
+  // Get z-index for proper layering (current: 30, previous: 20, others: 10)
   const getZIndex = () => {
-    if (
-      sectionIndex === currentSection + 1 ||
+    if (sectionIndex === currentSection) {
+      // Current section - on top, will slide away
+      return 30;
+    } else if (
+      scrollDirection === 'down' &&
+      sectionIndex === currentSection + 1
+    ) {
+      // Next section (scrolling down) - slides up from bottom
+      return 30;
+    } else if (
+      scrollDirection === 'up' &&
       sectionIndex === currentSection - 1
     ) {
-      // Transitioning section should be on top
-      return 30;
-    } else if (sectionIndex === currentSection) {
-      // Current section in middle
+      // Previous section (scrolling up) - stays pinned in background
+      return 20;
+    } else if (sectionIndex < currentSection) {
+      // Past sections - stay pinned in background
       return 20;
     } else {
-      // Other sections below
+      // Future sections - below
       return 10;
     }
   };
