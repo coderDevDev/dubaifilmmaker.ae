@@ -197,17 +197,22 @@ export default function HomePage() {
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     setTouchEnd(e.targetTouches[0].clientY);
+    console.log('touch move', e.targetTouches[0].clientY);
   };
   const handleTouchEnd = () => {
+    console.log('touch end', { touchStart, touchEnd });
     if (!touchStart || !touchEnd || isScrolling) return;
     const distance = touchStart - touchEnd;
-    const isUpSwipe = distance > 50; // Minimum swipe distance
-    const isDownSwipe = distance < -50;
+    console.log('swipe distance', distance);
+    const isUpSwipe = distance > 20; // Lowered for testing
+    const isDownSwipe = distance < -20;
     if (isUpSwipe && currentSection < videoSections.length - 1) {
       setScrollDirection('down');
+      console.log('triggerTransition: down');
       triggerTransition(currentSection + 1);
     } else if (isDownSwipe && currentSection > 0) {
       setScrollDirection('up');
+      console.log('triggerTransition: up');
       triggerTransition(currentSection - 1);
     }
     setTouchStart(null);
