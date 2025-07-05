@@ -16,6 +16,8 @@ export default function HomePage() {
   const [transitionProgress, setTransitionProgress] = useState(0);
   const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
   const containerRef = useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // CURB-style loader animation states
   const [lineProgress, setLineProgress] = useState(0); // 0 to 1
@@ -155,6 +157,33 @@ export default function HomePage() {
         }
       }
     };
+    const handleTouchStart = (e: TouchEvent) => {
+      setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      setTouchEnd(e.targetTouches[0].clientY);
+    };
+
+    const handleTouchEnd = () => {
+      if (!touchStart || !touchEnd || isScrolling) return;
+      
+      const distance = touchStart - touchEnd;
+      const isUpSwipe = distance > 50; // Minimum swipe distance
+      const isDownSwipe = distance < -50;
+      
+      if (isUpSwipe && currentSection < videoSections.length - 1) {
+        setScrollDirection('down');
+        triggerTransition(currentSection + 1);
+      } else if (isDownSwipe && currentSection > 0) {
+        setScrollDirection('up');
+        triggerTransition(currentSection - 1);
+      }
+      
+      setTouchStart(null);
+      setTouchEnd(null);
+    };
+
     const triggerTransition = (targetSection: number) => {
       setIsScrolling(true);
       let progress = 0;
@@ -177,11 +206,17 @@ export default function HomePage() {
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [currentSection, isScrolling, videoSections.length, isLoaded]);
+  }, [currentSection, isScrolling, videoSections.length, isLoaded, touchStart, touchEnd]);
 
   // Handle navigation clicks
   const navigateToSection = (sectionIndex: number) => {
@@ -453,18 +488,18 @@ export default function HomePage() {
           isTransitioning={isTransitioning}
         />
       ))}
-       <div className="fixed bottom-8 left-8 text-white z-50" id="lowerDesc">
+       {/* <div className="fixed bottom-8 left-8 text-white z-50" id="lowerDesc">
         <div className="text-sm font-light">
           <span className="mb-1 font-bold">Inspiring brands to be creative</span>
          
         </div>
-      </div>
-      <div className="fixed bottom-8 right-8 text-white z-50">
+      </div> */}
+      {/* <div className="fixed bottom-8 right-8 text-white z-50">
         <div className="text-right text-xs">
           <div className="mb-1 font-bold">A Copenhagen based film production company where trust and integrity comes first.</div>
          
         </div>
-      </div>
+      </div> */}
       </div>
     </div>
   );

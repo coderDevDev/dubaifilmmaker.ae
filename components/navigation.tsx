@@ -80,8 +80,8 @@ export function Navigation({
   };
 
   const openOverlay = () => {
-    setIsOverlayVisible(true);
-    setIsOverlayTransitioning(true);
+    setIsOverlayVisible(false);
+    setIsOverlayTransitioning(false);
   };
 
   const closeOverlay = () => {

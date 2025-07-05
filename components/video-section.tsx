@@ -12,6 +12,7 @@ interface VideoSectionProps {
   details?: string
   isActive?: boolean
   isTransitioning?: boolean
+  totalSections?: number
 }
 
 const VideoSection = forwardRef<HTMLElement, VideoSectionProps>(
@@ -26,6 +27,7 @@ const VideoSection = forwardRef<HTMLElement, VideoSectionProps>(
       details,
       isActive = false,
       isTransitioning = false,
+      totalSections,
     },
     ref,
   ) => {
@@ -133,88 +135,57 @@ const VideoSection = forwardRef<HTMLElement, VideoSectionProps>(
           <div className="absolute inset-0 bg-black/50" />
 
           {/* Current Content */}
-              {/* Content Overlay */}
-      <div
-        className="absolute inset-0 z-10 flex flex-col justify-between p-6 md:p-12"
-        style={{
-          transform: 'translateY(0)' // Content stays fixed like the video
-        }}>
-        {/* Main Content */}
-        <div className="flex-1 flex items-center">
-          <div className="w-full">
-            <div className="grid grid-cols-1 md:[grid-template-columns:auto_1fr_auto] items-end w-full gap-x-8">
-              {/* Left: Headline */}
-              <div className="flex items-end">
-                <div
-                  className="px-2 py-5 border-b  border-white/30" /* remove border for prod */
-                >
-                  <span
-                    className="text-white font-bold uppercase"
-                    style={{
-                      fontFamily: `'Oswald', 'Impact', 'Arial Narrow', Arial, sans-serif`,
-                      fontWeight: 700,
-                      fontSize: 'clamp(1.5rem, 3.5vw, 2.8rem)',
-                      lineHeight: 1.05,
-                      letterSpacing: '-0.04em',
-                      whiteSpace: 'nowrap'
-                    }}>
-                    {title}
-                  </span>
-                </div>
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12"
+          >
+            <div className="w-full max-w-lg mx-auto">
+              {/* Subtitle/Category (top left) */}
+              <div className="text-xs sm:text-sm font-bold text-white mb-1 drop-shadow">
+                {subtitle}
               </div>
-              {/* Center: Category above Subheadline */}
-              <div className="flex flex-col items-start gap-1">
-                <div className="px-2 py-0.5 " /* remove border for prod */>
-                  <span
-                    className="text-white font-bold uppercase"
+              {/* Title (large, bold, responsive, split after 3 words) */}
+              {(() => {
+                const words = title.split(' ');
+                const firstLine = words.slice(0, 3).join(' ');
+                const secondLine = words.slice(3).join(' ');
+                return (
+                  <div
+                    className="font-extrabold text-white leading-tight mb-2 drop-shadow"
                     style={{
-                      fontFamily: `'Oswald', 'Arial Narrow', Arial, sans-serif`,
-                      fontWeight: 700,
-                      fontSize: 'clamp(0.9rem, 1.2vw, 1.1rem)',
-                      letterSpacing: '0.02em'
-                    }}>
-                    {category}
-                  </span>
-                </div>
-                <div
-                  className="px-2 py-5 border-b border-white/50" /* remove border for prod */
-                >
-                  <span
-                    className="text-white"
-                    style={{
-                      fontFamily: `'Playfair Display', 'Georgia', 'Times New Roman', serif`,
-                      fontWeight: 700,
-                      fontSize: 'clamp(1.1rem, 2.5vw, 2.2rem)',
+                      fontSize: 'clamp(1.5rem, 6vw, 3.5rem)',
                       lineHeight: 1.1,
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap'
-                    }}>
-                    {subtitle}
-                  </span>
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {firstLine}
+                    {secondLine && <><br />{secondLine}</>}
+                  </div>
+                );
+              })()}
+              {/* Divider */}
+        
+              {/* Bottom row: genre/category and section counter */}
+              <div className="flex flex-row w-full">
+                {/* Left: Category with divider above */}
+                <div className="flex-1 flex flex-col">
+                  <div className="h-px w-2/3 bg-white/60 mb-4" />
+                  <div className="text-sm sm:text-base font-semibold text-white/90">
+                    {category}
+                  </div>
                 </div>
-              </div>
-              {/* Right: Section Indicator */}
-              <div className="flex items-center justify-center">
-                <div className="px-6 py-3 border-b border-white/20">
-                  <span
-                    className="text-white font-bold flex items-center gap-10"
-                    style={{
-                      fontFamily: `'Oswald', 'Arial Narrow', Arial, sans-serif`,
-                      fontWeight: 700,
-                      fontSize: 'clamp(1rem, 2vw, 1.5rem)',
-                      letterSpacing: '0.1em'
-                    }}>
+                {/* Right: Section Index with divider above */}
+                <div className="flex flex-col items-end">
+                  <div className="h-px w-full bg-white/60 mb-4" />
+                  <div className="text-sm sm:text-base font-bold text-white/90 flex items-center gap-5 justify-end">
                     <span>{String(index).padStart(2, '0')}</span>
                     <span className="text-white/60">/</span>
-                    <span>{String(index).padStart(2, '0')}</span>
-                  </span>
+                    <span>{String(totalSections || 15).padStart(2, '0')}</span>
+                  </div>
                 </div>
               </div>
             </div>
-            {/* Horizontal line below */}
           </div>
         </div>
-        </div>     </div>
       </section>
     )
   },
