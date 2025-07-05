@@ -195,6 +195,7 @@ export default function HomePage() {
   // React touch handlers for mobile swipe navigation
   const handleTouchStart = (e: React.TouchEvent) => {
     console.log('touch start');
+    setIsScrolling(false); // Reset scrolling state on new touch
     setTouchStart(e.targetTouches[0].clientY);
   };
   const handleTouchMove = (e: React.TouchEvent) => {
