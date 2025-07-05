@@ -170,6 +170,7 @@ export default function HomePage() {
 
   // Section transition function must be defined before handlers that use it
   const triggerTransition = (targetSection: number) => {
+    console.log('triggerTransition called', targetSection);
     setIsScrolling(true);
     let progress = 0;
     const duration = 1000;
@@ -185,6 +186,7 @@ export default function HomePage() {
         setCurrentSection(targetSection);
         setTransitionProgress(0);
         setIsScrolling(false);
+        console.log('setIsScrolling(false) called');
       }
     };
     requestAnimationFrame(animateTransition);
@@ -200,7 +202,7 @@ export default function HomePage() {
     console.log('touch move', e.targetTouches[0].clientY);
   };
   const handleTouchEnd = () => {
-    console.log('touch end', { touchStart, touchEnd });
+    console.log('touch end', { touchStart, touchEnd, isScrolling });
     if (!touchStart || !touchEnd || isScrolling) return;
     const distance = touchStart - touchEnd;
     console.log('swipe distance', distance);
