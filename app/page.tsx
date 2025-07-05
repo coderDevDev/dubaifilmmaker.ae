@@ -29,6 +29,9 @@ export default function HomePage() {
   const [showLoader, setShowLoader] = useState(true); // Loader stays mounted until curtain is done
   const [loaderFadeOut, setLoaderFadeOut] = useState(false); // Loader opacity
 
+  const [pointerStartY, setPointerStartY] = useState<number | null>(null);
+  const [pointerEndY, setPointerEndY] = useState<number | null>(null);
+
   const videoSections = [
     {
       id: "hero",
@@ -357,6 +360,31 @@ export default function HomePage() {
     }
   }, [currentSectionIndex, isTransitioning])
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Only respond to left mouse button or touch
+    if ((e.pointerType === 'mouse' && e.button !== 0)) return;
+    setPointerStartY(e.clientY);
+  };
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (pointerStartY !== null) {
+      setPointerEndY(e.clientY);
+    }
+  };
+  const handlePointerUp = () => {
+    if (pointerStartY === null || pointerEndY === null || isScrolling) return;
+    const distance = pointerStartY - pointerEndY;
+    const isUpSwipe = distance > 50;
+    const isDownSwipe = distance < -50;
+    if (isUpSwipe && currentSection < videoSections.length - 1) {
+      setScrollDirection('down');
+      triggerTransition(currentSection + 1);
+    } else if (isDownSwipe && currentSection > 0) {
+      setScrollDirection('up');
+      triggerTransition(currentSection - 1);
+    }
+    setPointerStartY(null);
+    setPointerEndY(null);
+  };
 
   return (
     <div
@@ -365,6 +393,9 @@ export default function HomePage() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
     >
       {/* Loader stays visible and fades out as curtain animates */}
       {showLoader && (

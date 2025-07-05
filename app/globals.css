@@ -9,13 +9,13 @@
 
   html {
     height: 100%;
-    overflow: hidden;
+    /* overflow: hidden; */
   }
 
   body {
     font-family: 'Inter', sans-serif;
     background: #000;
-    overflow: hidden;
+    /* overflow: hidden; */
     height: 100%;
     margin: 0;
     padding: 0;
