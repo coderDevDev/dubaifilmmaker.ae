@@ -52,7 +52,7 @@ export default function HomePage() {
       details: "Building a sustainable economy and ensuring long-term prosperity.",
     },
     {
-      id: "showcase",
+      id: "showcase111",
       videoUrl: "https://video.wixstatic.com/video/8c2c22_be8c6399dae342ad85c57a9ae6401857/1080p/mp4/file.mp4",
       title: "THE ABU DHABI PLAN - FAISAL",
       subtitle: "Abu Dhabi Executive Council",
@@ -192,6 +192,7 @@ export default function HomePage() {
 
   // React touch handlers for mobile swipe navigation
   const handleTouchStart = (e: React.TouchEvent) => {
+    console.log('touch start');
     setTouchStart(e.targetTouches[0].clientY);
   };
   const handleTouchMove = (e: React.TouchEvent) => {

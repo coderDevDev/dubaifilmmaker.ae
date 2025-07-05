@@ -116,7 +116,7 @@ export function Navigation({
   }, [isOverlayTransitioning, isOverlayVisible]);
 
   return (
-    <nav className="navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent">
+    <nav className="navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent pointer-events-none md:pointer-events-auto">
       <div className="mx-auto px-6 py-6 relative ">
         <div className="flex items-center justify-between relative">
           {/* Logo (left) */}
