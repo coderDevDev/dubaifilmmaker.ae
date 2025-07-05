@@ -179,7 +179,7 @@ const VideoSection = forwardRef<HTMLElement, VideoSectionProps>(
                   <div className="text-sm sm:text-base font-bold text-white/90 flex items-center gap-5 justify-end">
                     <span>{String(index).padStart(2, '0')}</span>
                     <span className="text-white/60">/</span>
-                    <span>{String(totalSections || 15).padStart(2, '0')}</span>
+                    <span>{String(totalSections ).padStart(2, '0')}</span>
                   </div>
                 </div>
               </div>

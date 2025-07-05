@@ -158,20 +158,20 @@ export default function HomePage() {
       }
     };
     const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
       setTouchStart(e.targetTouches[0].clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
       setTouchEnd(e.targetTouches[0].clientY);
     };
 
     const handleTouchEnd = () => {
       if (!touchStart || !touchEnd || isScrolling) return;
-      
       const distance = touchStart - touchEnd;
       const isUpSwipe = distance > 50; // Minimum swipe distance
       const isDownSwipe = distance < -50;
-      
       if (isUpSwipe && currentSection < videoSections.length - 1) {
         setScrollDirection('down');
         triggerTransition(currentSection + 1);
@@ -179,7 +179,6 @@ export default function HomePage() {
         setScrollDirection('up');
         triggerTransition(currentSection - 1);
       }
-      
       setTouchStart(null);
       setTouchEnd(null);
     };
@@ -206,15 +205,20 @@ export default function HomePage() {
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
     };
   }, [currentSection, isScrolling, videoSections.length, isLoaded, touchStart, touchEnd]);
 
@@ -486,6 +490,7 @@ export default function HomePage() {
           details={section.details}
           isActive={index === currentSectionIndex}
           isTransitioning={isTransitioning}
+          totalSections={videoSections.length}
         />
       ))}
        {/* <div className="fixed bottom-8 left-8 text-white z-50" id="lowerDesc">
