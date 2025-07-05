@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { Navigation } from '@/components/navigation';
 import { CustomCursor } from '@/components/custom-cursor';
-import { VideoSection } from '@/components/video-section';
-
+import VideoSection from "@/components/video-section"
+import { gsap } from "gsap"
 export default function HomePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,36 +29,35 @@ export default function HomePage() {
 
   const videoSections = [
     {
-      id: 'hero',
-      videoUrl:
-        'https://video.wixstatic.com/video/8c2c22_13c6aa4d9ebb4e6d9e591dcaaa7cb89e/720p/mp4/file.mp4',
-      title: 'THE ABU DHABI PLAN',
-      subtitle: 'Abu Dhabi Executive Council',
-      category: 'Film',
-      description: 'Strategic Vision 2030',
-      details: 'A comprehensive development plan for the future of Abu Dhabi.'
+      id: "hero",
+      videoUrl: "https://video.wixstatic.com/video/8c2c22_13c6aa4d9ebb4e6d9e591dcaaa7cb89e/720p/mp4/file.mp4",
+      title: "THE ABU DHABI PLAN",
+      subtitle: "Abu Dhabi Executive Council",
+      category: "Film",
+      description: "THE ABU DHABI PLAN",
+      details: "A comprehensive development plan for the future of Abu Dhabi.",
     },
     {
-      id: 'showcase',
-      videoUrl: 'https://assets.curbcph.tv/Click%20Click_Cutdown_3%202.mp4',
-      title: 'THE ABU DHABI PLAN - REEM',
-      subtitle: 'Abu Dhabi Economic Vision',
-      category: 'Strategy',
-      description: 'Building a Sustainable Economy',
-      details:
-        "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
+      id: "showcase",
+      videoUrl: "https://video.wixstatic.com/video/8c2c22_be8c6399dae342ad85c57a9ae6401857/1080p/mp4/file.mp4",
+      title: "THE ABU DHABI PLAN - REEM",
+      subtitle: "Abu Dhabi Executive Council",
+      category: "Film",
+      description: "Strategic Vision 2030",
+      details: "Building a sustainable economy and ensuring long-term prosperity.",
     },
     {
-      id: 'showcase',
-      videoUrl: 'https://assets.curbcph.tv/Hermes%202.mp4',
-      title: 'THE ABU DHABI PLAN - REEM',
-      subtitle: 'Abu Dhabi Economic Vision',
-      category: 'Strategy',
-      description: 'Building a Sustainable Economy',
-      details:
-        "Transforming Abu Dhabi's economic base and ensuring long-term prosperity."
-    }
-  ];
+      id: "showcase",
+      videoUrl: "https://video.wixstatic.com/video/8c2c22_be8c6399dae342ad85c57a9ae6401857/1080p/mp4/file.mp4",
+      title: "THE ABU DHABI PLAN - FAISAL",
+      subtitle: "Abu Dhabi Executive Council",
+      category: "Film",
+      description: "Strategic Vision 2030",
+      details: "Building a sustainable economy and ensuring long-term prosperity.",
+    },
+  ]
+
+  
 
   // Animate the progress line first, then text, then fade out loader
   useEffect(() => {
@@ -209,6 +208,129 @@ export default function HomePage() {
     }
   };
 
+
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const sectionsRef = useRef<(HTMLElement | null)[]>([])
+  
+  const getNextIndex = (currentIndex: number) => {
+    return currentIndex >= videoSections.length - 1 ? 0 : currentIndex + 1
+  }
+
+  const getPreviousIndex = (currentIndex: number) => {
+    return currentIndex <= 0 ? videoSections.length - 1 : currentIndex - 1
+  }
+
+  const animateToNext = () => {
+    if (isTransitioning) return
+
+    const nextIndex = getNextIndex(currentSectionIndex)
+    setIsTransitioning(true)
+
+    const currentSection = sectionsRef.current[currentSectionIndex]
+    const nextSection = sectionsRef.current[nextIndex]
+
+    if (currentSection && nextSection) {
+      const currentOverlay = currentSection.querySelector('[data-overlay="current"]')
+      const nextOverlay = nextSection.querySelector('[data-overlay="current"]')
+
+      // Make next section visible and set initial state
+      gsap.set(nextSection, { visibility: "visible", zIndex: 20 })
+      gsap.set(nextOverlay, { clipPath: "inset(100% 0 0 0)" })
+
+      // Animate curtain transition down
+      gsap.to(currentOverlay, {
+        clipPath: "inset(0 0 100% 0)",
+        duration: 0.8,
+        ease: "power2.inOut",
+      })
+
+      gsap.to(nextOverlay, {
+        clipPath: "inset(0% 0 0 0)",
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+          // Clean up after transition
+          gsap.set(currentSection, { visibility: "hidden", zIndex: currentSectionIndex + 1 })
+          gsap.set(nextSection, { zIndex: nextIndex + 1 })
+          setCurrentSectionIndex(nextIndex)
+          setIsTransitioning(false)
+        },
+      })
+    }
+  }
+
+  const animateToPrevious = () => {
+    if (isTransitioning) return
+
+    const prevIndex = getPreviousIndex(currentSectionIndex)
+    setIsTransitioning(true)
+
+    const currentSection = sectionsRef.current[currentSectionIndex]
+    const prevSection = sectionsRef.current[prevIndex]
+
+    if (currentSection && prevSection) {
+      const currentOverlay = currentSection.querySelector('[data-overlay="current"]')
+      const prevOverlay = prevSection.querySelector('[data-overlay="current"]')
+
+      // Make previous section visible and set it to be fully visible underneath
+      gsap.set(prevSection, { visibility: "visible", zIndex: 15 })
+      gsap.set(prevOverlay, { clipPath: "inset(0% 0 0 0)" }) // Previous section fully visible
+
+      // Current section starts fully visible and will be wiped upward
+      gsap.set(currentSection, { zIndex: 20 })
+      gsap.set(currentOverlay, { clipPath: "inset(0% 0 0 0)" })
+
+      // Animate curtain transition up - wipe current section upward to reveal previous
+      gsap.to(currentOverlay, {
+        clipPath: "inset(100% 0 0 0)", // Wipe upward
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+          // Clean up after transition
+          gsap.set(currentSection, { visibility: "hidden", zIndex: currentSectionIndex + 1 })
+          gsap.set(prevSection, { zIndex: prevIndex + 1 })
+          setCurrentSectionIndex(prevIndex)
+          setIsTransitioning(false)
+        },
+      })
+    }
+  }
+
+  // Global navigation handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        animateToNext()
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        animateToPrevious()
+      }
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+
+      if (e.deltaY > 0) {
+        // Scroll down - go to next section (or loop to first)
+        animateToNext()
+      } else if (e.deltaY < 0) {
+        // Scroll up - go to previous section (or loop to last)
+        animateToPrevious()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("wheel", handleWheel)
+    }
+  }, [currentSectionIndex, isTransitioning])
+
+
   return (
     <div ref={containerRef} className="relative h-screen overflow-hidden">
       {/* Loader stays visible and fades out as curtain animates */}
@@ -297,18 +419,8 @@ export default function HomePage() {
       {/* Main Content Animation */}
       <div className="relative">
         {/* Curtain Reveal Animation */}
-        <div
-          className={`fixed inset-0 z-[1500] bg-black transition-transform duration-1000 ease-in-out pointer-events-none
-            ${showCurtain ? 'translate-y-0' : '-translate-y-full'}`}
-          style={{ willChange: 'transform' }}
-        />
-        {/* Main Content Animation */}
-        <div
-          id="main-content"
-          className={`transition-opacity duration-1000 ease-out ${
-            showMainContent ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}>
-          <nav
+
+        <nav
             className={`navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent ${
               isLoading ? 'opacity-0' : 'opacity-100'
             }`}>
@@ -318,67 +430,41 @@ export default function HomePage() {
               onNavigate={navigateToSection}
             />
           </nav>
-          <main
-            className={`relative w-full h-full transition-opacity duration-1000 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}>
-            <CustomCursor />
-            {videoSections.map((section, index) => (
-              <VideoSection
-                key={`${section.id}-${index}`} // Add index to key
-                {...section}
-                sectionIndex={index}
-                currentSection={currentSection}
-                transitionProgress={
-                  isInitialCurtain && index === 0
-                    ? curtainProgress
-                    : transitionProgress
-                }
-                isActive={index === currentSection}
-                isLoaded={isLoaded}
-                totalSections={videoSections.length}
-                scrollDirection={scrollDirection}
-              />
-            ))}
-          </main>
-          {/* Section Indicators */}
-          <div
-            className={`fixed right-8 top-1/2 transform -translate-y-1/2 z-50 space-y-4 transition-opacity duration-1000 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}>
-            {videoSections.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => navigateToSection(index)}
-                className={`w-2 h-8 rounded-full transition-all duration-500 ${
-                  index === currentSection
-                    ? 'bg-white shadow-lg'
-                    : 'bg-white/30 hover:bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-          {/* Current Section Indicator */}
-          <div
-            className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 text-white/60 text-sm font-light transition-opacity duration-1000 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}>
-            {String(currentSection + 1).padStart(2, '0')} /{' '}
-            {String(videoSections.length).padStart(2, '0')}
-          </div>
-          {/* Progress Indicator */}
-          <div
-            className={`fixed top-0 left-0 w-full h-1 bg-white/10 z-50 transition-opacity duration-1000 ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}>
-            <div
-              className="h-full bg-white transition-all duration-300 ease-out"
-              style={{
-                width: `${((currentSection + 1) / videoSections.length) * 100}%`
-              }}
-            />
-          </div>
+        <div
+          className={`fixed inset-0 z-[1500] bg-black transition-transform duration-1000 ease-in-out pointer-events-none
+            ${showCurtain ? 'translate-y-0' : '-translate-y-full'}`}
+          style={{ willChange: 'transform' }}
+        />
+        {/* Main Content Animation */}
+        {videoSections.map((section, index) => (
+        <VideoSection
+          key={section.id}
+          ref={(el) => {
+            sectionsRef.current[index] = el
+          }}
+          videoSrc={section.videoUrl}
+          index={index + 1}
+          title={section.title}
+          subtitle={section.subtitle}
+          category={section.category}
+          description={section.description}
+          details={section.details}
+          isActive={index === currentSectionIndex}
+          isTransitioning={isTransitioning}
+        />
+      ))}
+       <div className="fixed bottom-8 left-8 text-white z-50" id="lowerDesc">
+        <div className="text-sm font-light">
+          <span className="mb-1 font-bold">Inspiring brands to be creative</span>
+         
         </div>
+      </div>
+      <div className="fixed bottom-8 right-8 text-white z-50">
+        <div className="text-right text-xs">
+          <div className="mb-1 font-bold">A Copenhagen based film production company where trust and integrity comes first.</div>
+         
+        </div>
+      </div>
       </div>
     </div>
   );
