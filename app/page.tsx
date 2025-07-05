@@ -402,7 +402,9 @@ export default function HomePage() {
         <div
           className={`fixed inset-0 z-[2000] bg-black flex justify-center items-center transition-opacity duration-1000 ${
             loaderFadeOut ? 'opacity-0' : 'opacity-100'
-          }`}>
+          }`}
+          style={{ pointerEvents: loaderFadeOut ? 'none' : 'auto' }}
+        >
           <div className="w-full px-2 md:px-8">
             <div className="grid grid-cols-1 lg:[grid-template-columns:auto_1fr_auto] items-end w-full gap-x-12">
               {/* Left: Headline */}
