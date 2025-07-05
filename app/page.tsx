@@ -157,70 +157,58 @@ export default function HomePage() {
         }
       }
     };
-    const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      setTouchStart(e.targetTouches[0].clientY);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      setTouchEnd(e.targetTouches[0].clientY);
-    };
-
-    const handleTouchEnd = () => {
-      if (!touchStart || !touchEnd || isScrolling) return;
-      const distance = touchStart - touchEnd;
-      const isUpSwipe = distance > 50; // Minimum swipe distance
-      const isDownSwipe = distance < -50;
-      if (isUpSwipe && currentSection < videoSections.length - 1) {
-        setScrollDirection('down');
-        triggerTransition(currentSection + 1);
-      } else if (isDownSwipe && currentSection > 0) {
-        setScrollDirection('up');
-        triggerTransition(currentSection - 1);
-      }
-      setTouchStart(null);
-      setTouchEnd(null);
-    };
-
-    const triggerTransition = (targetSection: number) => {
-      setIsScrolling(true);
-      let progress = 0;
-      const duration = 1000;
-      const startTime = Date.now();
-      const animateTransition = () => {
-        const elapsed = Date.now() - startTime;
-        progress = Math.min(elapsed / duration, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 2);
-        setTransitionProgress(easedProgress);
-        if (progress < 1) {
-          requestAnimationFrame(animateTransition);
-        } else {
-          setCurrentSection(targetSection);
-          setTransitionProgress(0);
-          setIsScrolling(false);
-        }
-      };
-      requestAnimationFrame(animateTransition);
-    };
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('touchstart', handleTouchStart, { passive: false });
-      container.addEventListener('touchmove', handleTouchMove, { passive: false });
-      container.addEventListener('touchend', handleTouchEnd, { passive: false });
-    }
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
-      if (container) {
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentSection, isScrolling, videoSections.length, isLoaded]);
+
+  // Section transition function must be defined before handlers that use it
+  const triggerTransition = (targetSection: number) => {
+    setIsScrolling(true);
+    let progress = 0;
+    const duration = 1000;
+    const startTime = Date.now();
+    const animateTransition = () => {
+      const elapsed = Date.now() - startTime;
+      progress = Math.min(elapsed / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 2);
+      setTransitionProgress(easedProgress);
+      if (progress < 1) {
+        requestAnimationFrame(animateTransition);
+      } else {
+        setCurrentSection(targetSection);
+        setTransitionProgress(0);
+        setIsScrolling(false);
       }
     };
-  }, [currentSection, isScrolling, videoSections.length, isLoaded, touchStart, touchEnd]);
+    requestAnimationFrame(animateTransition);
+  };
+
+  // React touch handlers for mobile swipe navigation
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd || isScrolling) return;
+    const distance = touchStart - touchEnd;
+    const isUpSwipe = distance > 50; // Minimum swipe distance
+    const isDownSwipe = distance < -50;
+    if (isUpSwipe && currentSection < videoSections.length - 1) {
+      setScrollDirection('down');
+      triggerTransition(currentSection + 1);
+    } else if (isDownSwipe && currentSection > 0) {
+      setScrollDirection('up');
+      triggerTransition(currentSection - 1);
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
 
   // Handle navigation clicks
   const navigateToSection = (sectionIndex: number) => {
@@ -371,7 +359,13 @@ export default function HomePage() {
 
 
   return (
-    <div ref={containerRef} className="relative h-screen overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative h-screen overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Loader stays visible and fades out as curtain animates */}
       {showLoader && (
         <div
