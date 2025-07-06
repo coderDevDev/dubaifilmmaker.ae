@@ -90,10 +90,12 @@ const VideoSection = forwardRef<HTMLElement, VideoSectionProps>(
     return (
       <section
         ref={ref}
-        className="fixed inset-0 w-screen h-screen overflow-hidden"
+        className="fixed inset-0 w-full h-full overflow-hidden"
         style={{
           zIndex: isActive ? 10 : index,
           visibility: isActive || isTransitioning ? "visible" : "hidden",
+          height: '100vh',
+          width: '100vw',
         }}
       >
         {/* Current Section Overlay */}

@@ -400,18 +400,32 @@ export default function HomePage() {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-screen overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-    >
-      {/* Loader stays visible and fades out as curtain animates */}
-      {showLoader && (
+    <>
+      {/* Navigation - moved to root level */}
+      <nav
+        className={`navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}>
+        <Navigation
+          currentSection={currentSection}
+          totalSections={videoSections.length}
+          onNavigate={navigateToSection}
+        />
+      </nav>
+
+      <div
+        ref={containerRef}
+        className="relative h-screen w-full overflow-hidden"
+        style={{ height: '100vh', minHeight: '100vh' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        {/* Loader stays visible and fades out as curtain animates */}
+        {showLoader && (
         <div
           className={`fixed inset-0 z-[2000] bg-black flex justify-center items-center transition-opacity duration-1000 ${
             loaderFadeOut ? 'opacity-0' : 'opacity-100'
@@ -497,19 +511,7 @@ export default function HomePage() {
 
 
 
-            {/* Navigation - moved outside main content */}
-      <nav
-        className={`navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}>
-        <Navigation
-          currentSection={currentSection}
-          totalSections={videoSections.length}
-          onNavigate={navigateToSection}
-        />
-      </nav>
-
-      {/* Main Content Animation */}
+            {/* Main Content Animation */}
       <div className="relative">
         {/* Curtain Reveal Animation */}
           <div
@@ -550,5 +552,6 @@ export default function HomePage() {
       </div> */}
       </div>
     </div>
+    </>
   );
 }
