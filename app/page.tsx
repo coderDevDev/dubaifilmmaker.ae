@@ -13,11 +13,11 @@ export default function HomePage() {
   const [curtainProgress, setCurtainProgress] = useState(0);
   const [currentSection, setCurrentSection] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [transitionProgress, setTransitionProgress] = useState(0);
   const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
   const containerRef = useRef<HTMLDivElement>(null);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const sectionsRef = useRef<(HTMLElement | null)[]>([]);
 
   // CURB-style loader animation states
   const [lineProgress, setLineProgress] = useState(0); // 0 to 1
@@ -62,7 +62,92 @@ export default function HomePage() {
     },
   ]
 
-  
+
+
+  // Helper functions for navigation
+  const getNextIndex = (currentIndex: number) => {
+    return currentIndex < videoSections.length - 1 ? currentIndex + 1 : 0;
+  };
+
+  const getPreviousIndex = (currentIndex: number) => {
+    return currentIndex > 0 ? currentIndex - 1 : videoSections.length - 1;
+  };
+
+  const animateToNext = () => {
+    if (isScrolling) return;
+
+    const nextIndex = getNextIndex(currentSection);
+    setIsScrolling(true);
+
+    const currentSectionElement = sectionsRef.current[currentSection];
+    const nextSectionElement = sectionsRef.current[nextIndex];
+
+    if (currentSectionElement && nextSectionElement) {
+      const currentOverlay = currentSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+      const nextOverlay = nextSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+
+      // Make next section visible and set initial state
+      gsap.set(nextSectionElement, { visibility: "visible", zIndex: 20 });
+      gsap.set(nextOverlay, { clipPath: "inset(100% 0 0 0)" });
+
+      // Animate curtain transition down
+      gsap.to(currentOverlay, {
+        clipPath: "inset(0 0 100% 0)",
+        duration: 0.8,
+        ease: "power2.inOut",
+      });
+
+      gsap.to(nextOverlay, {
+        clipPath: "inset(0% 0 0 0)",
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+          // Clean up after transition
+          gsap.set(currentSectionElement, { visibility: "hidden", zIndex: currentSection + 1 });
+          gsap.set(nextSectionElement, { zIndex: nextIndex + 1 });
+          setCurrentSection(nextIndex);
+          setIsScrolling(false);
+        },
+      });
+    }
+  };
+
+  const animateToPrevious = () => {
+    if (isScrolling) return;
+
+    const prevIndex = getPreviousIndex(currentSection);
+    setIsScrolling(true);
+
+    const currentSectionElement = sectionsRef.current[currentSection];
+    const prevSectionElement = sectionsRef.current[prevIndex];
+
+    if (currentSectionElement && prevSectionElement) {
+      const currentOverlay = currentSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+      const prevOverlay = prevSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+
+      // Make previous section visible and set it to be fully visible underneath
+      gsap.set(prevSectionElement, { visibility: "visible", zIndex: 15 });
+      gsap.set(prevOverlay, { clipPath: "inset(0% 0 0 0)" }); // Previous section fully visible
+
+      // Current section starts fully visible and will be wiped upward
+      gsap.set(currentSectionElement, { zIndex: 20 });
+      gsap.set(currentOverlay, { clipPath: "inset(0% 0 0 0)" });
+
+      // Animate curtain transition up - wipe current section upward to reveal previous
+      gsap.to(currentOverlay, {
+        clipPath: "inset(100% 0 0 0)", // Wipe upward
+        duration: 0.8,
+        ease: "power2.inOut",
+        onComplete: () => {
+          // Clean up after transition
+          gsap.set(currentSectionElement, { visibility: "hidden", zIndex: currentSection + 1 });
+          gsap.set(prevSectionElement, { zIndex: prevIndex + 1 });
+          setCurrentSection(prevIndex);
+          setIsScrolling(false);
+        },
+      });
+    }
+  };
 
   // Animate the progress line first, then text, then fade out loader
   useEffect(() => {
@@ -134,63 +219,83 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (isScrolling) return;
       const direction = e.deltaY > 0 ? 1 : -1;
-      const nextSection = currentSection + direction;
-      if (nextSection >= 0 && nextSection < videoSections.length) {
-        setScrollDirection(direction > 0 ? 'down' : 'up');
-        triggerTransition(nextSection);
+      if (direction > 0) {
+        setScrollDirection('down');
+        animateToNext();
+      } else {
+        setScrollDirection('up');
+        animateToPrevious();
       }
     };
+    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isScrolling) return;
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
         e.preventDefault();
-        if (currentSection < videoSections.length - 1) {
-          setScrollDirection('down');
-          triggerTransition(currentSection + 1);
-        }
+        setScrollDirection('down');
+        animateToNext();
       } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
         e.preventDefault();
-        if (currentSection > 0) {
-          setScrollDirection('up');
-          triggerTransition(currentSection - 1);
-        }
+        setScrollDirection('up');
+        animateToPrevious();
       }
     };
+
+    // Prevent pull-to-refresh on mobile
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const startY = touch.clientY;
+        
+        const handleTouchMove = (e: TouchEvent) => {
+          if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const currentY = touch.clientY;
+            const deltaY = currentY - startY;
+            
+            // Prevent pull-to-refresh when swiping down at the top
+            if (deltaY > 0 && window.scrollY === 0) {
+              e.preventDefault();
+            }
+          }
+        };
+        
+        const handleTouchEnd = () => {
+          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchend', handleTouchEnd);
+        };
+        
+        document.addEventListener('touchmove', handleTouchMove);
+        document.addEventListener('touchend', handleTouchEnd);
+      }
+    };
+
+    // Prevent scroll events that could trigger refresh
+    const handleScroll = (e: Event) => {
+      if (window.scrollY === 0) {
+        e.preventDefault();
+      }
+    };
+
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('scroll', handleScroll, { passive: false });
+    
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [currentSection, isScrolling, videoSections.length, isLoaded]);
 
-  // Section transition function must be defined before handlers that use it
-  const triggerTransition = (targetSection: number) => {
-    console.log('triggerTransition called', targetSection);
-    setIsScrolling(true);
-    let progress = 0;
-    const duration = 1000;
-    const startTime = Date.now();
-    const animateTransition = () => {
-      const elapsed = Date.now() - startTime;
-      progress = Math.min(elapsed / duration, 1);
-      const easedProgress = 1 - Math.pow(1 - progress, 2);
-      setTransitionProgress(easedProgress);
-      if (progress < 1) {
-        requestAnimationFrame(animateTransition);
-      } else {
-        setCurrentSection(targetSection);
-        setTransitionProgress(0);
-        setIsScrolling(false);
-        console.log('setIsScrolling(false) called');
-      }
-    };
-    requestAnimationFrame(animateTransition);
-  };
+
 
   // React touch handlers for mobile swipe navigation
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -209,14 +314,14 @@ export default function HomePage() {
     console.log('swipe distance', distance);
     const isUpSwipe = distance > 20; // Lowered for testing
     const isDownSwipe = distance < -20;
-    if (isUpSwipe && currentSection < videoSections.length - 1) {
+    if (isUpSwipe) {
       setScrollDirection('down');
-      console.log('triggerTransition: down');
-      triggerTransition(currentSection + 1);
-    } else if (isDownSwipe && currentSection > 0) {
+      console.log('animateToNext: down');
+      animateToNext();
+    } else if (isDownSwipe) {
       setScrollDirection('up');
-      console.log('triggerTransition: up');
-      triggerTransition(currentSection - 1);
+      console.log('animateToPrevious: up');
+      animateToPrevious();
     }
     setTouchStart(null);
     setTouchEnd(null);
@@ -227,147 +332,46 @@ export default function HomePage() {
     if (!isScrolling && sectionIndex !== currentSection) {
       setScrollDirection(sectionIndex > currentSection ? 'down' : 'up');
       setIsScrolling(true);
-      let progress = 0;
-      const duration = 1000;
-      const startTime = Date.now();
-      const animateTransition = () => {
-        const elapsed = Date.now() - startTime;
-        progress = Math.min(elapsed / duration, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 2);
-        setTransitionProgress(easedProgress);
-        if (progress < 1) {
-          requestAnimationFrame(animateTransition);
-        } else {
-          setCurrentSection(sectionIndex);
-          setTransitionProgress(0);
-          setIsScrolling(false);
-        }
-      };
-      requestAnimationFrame(animateTransition);
+
+      const currentSectionElement = sectionsRef.current[currentSection];
+      const targetSectionElement = sectionsRef.current[sectionIndex];
+
+      if (currentSectionElement && targetSectionElement) {
+        const currentOverlay = currentSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+        const targetOverlay = targetSectionElement.querySelector('[data-overlay="current"]') as HTMLElement;
+
+        // Make target section visible and set initial state
+        gsap.set(targetSectionElement, { visibility: "visible", zIndex: 20 });
+        
+        // Determine animation direction
+        const isGoingDown = sectionIndex > currentSection;
+        const initialClipPath = isGoingDown ? "inset(100% 0 0 0)" : "inset(0 0 100% 0)";
+        const currentClipPath = isGoingDown ? "inset(0 0 100% 0)" : "inset(100% 0 0 0)";
+        
+        gsap.set(targetOverlay, { clipPath: initialClipPath });
+
+        // Animate curtain transition
+        gsap.to(currentOverlay, {
+          clipPath: currentClipPath,
+          duration: 0.8,
+          ease: "power2.inOut",
+        });
+
+        gsap.to(targetOverlay, {
+          clipPath: "inset(0% 0 0 0)",
+          duration: 0.8,
+          ease: "power2.inOut",
+          onComplete: () => {
+            // Clean up after transition
+            gsap.set(currentSectionElement, { visibility: "hidden", zIndex: currentSection + 1 });
+            gsap.set(targetSectionElement, { zIndex: sectionIndex + 1 });
+            setCurrentSection(sectionIndex);
+            setIsScrolling(false);
+          },
+        });
+      }
     }
   };
-
-
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const sectionsRef = useRef<(HTMLElement | null)[]>([])
-  
-  const getNextIndex = (currentIndex: number) => {
-    return currentIndex >= videoSections.length - 1 ? 0 : currentIndex + 1
-  }
-
-  const getPreviousIndex = (currentIndex: number) => {
-    return currentIndex <= 0 ? videoSections.length - 1 : currentIndex - 1
-  }
-
-  const animateToNext = () => {
-    if (isTransitioning) return
-
-    const nextIndex = getNextIndex(currentSectionIndex)
-    setIsTransitioning(true)
-
-    const currentSection = sectionsRef.current[currentSectionIndex]
-    const nextSection = sectionsRef.current[nextIndex]
-
-    if (currentSection && nextSection) {
-      const currentOverlay = currentSection.querySelector('[data-overlay="current"]')
-      const nextOverlay = nextSection.querySelector('[data-overlay="current"]')
-
-      // Make next section visible and set initial state
-      gsap.set(nextSection, { visibility: "visible", zIndex: 20 })
-      gsap.set(nextOverlay, { clipPath: "inset(100% 0 0 0)" })
-
-      // Animate curtain transition down
-      gsap.to(currentOverlay, {
-        clipPath: "inset(0 0 100% 0)",
-        duration: 0.8,
-        ease: "power2.inOut",
-      })
-
-      gsap.to(nextOverlay, {
-        clipPath: "inset(0% 0 0 0)",
-        duration: 0.8,
-        ease: "power2.inOut",
-        onComplete: () => {
-          // Clean up after transition
-          gsap.set(currentSection, { visibility: "hidden", zIndex: currentSectionIndex + 1 })
-          gsap.set(nextSection, { zIndex: nextIndex + 1 })
-          setCurrentSectionIndex(nextIndex)
-          setIsTransitioning(false)
-        },
-      })
-    }
-  }
-
-  const animateToPrevious = () => {
-    if (isTransitioning) return
-
-    const prevIndex = getPreviousIndex(currentSectionIndex)
-    setIsTransitioning(true)
-
-    const currentSection = sectionsRef.current[currentSectionIndex]
-    const prevSection = sectionsRef.current[prevIndex]
-
-    if (currentSection && prevSection) {
-      const currentOverlay = currentSection.querySelector('[data-overlay="current"]')
-      const prevOverlay = prevSection.querySelector('[data-overlay="current"]')
-
-      // Make previous section visible and set it to be fully visible underneath
-      gsap.set(prevSection, { visibility: "visible", zIndex: 15 })
-      gsap.set(prevOverlay, { clipPath: "inset(0% 0 0 0)" }) // Previous section fully visible
-
-      // Current section starts fully visible and will be wiped upward
-      gsap.set(currentSection, { zIndex: 20 })
-      gsap.set(currentOverlay, { clipPath: "inset(0% 0 0 0)" })
-
-      // Animate curtain transition up - wipe current section upward to reveal previous
-      gsap.to(currentOverlay, {
-        clipPath: "inset(100% 0 0 0)", // Wipe upward
-        duration: 0.8,
-        ease: "power2.inOut",
-        onComplete: () => {
-          // Clean up after transition
-          gsap.set(currentSection, { visibility: "hidden", zIndex: currentSectionIndex + 1 })
-          gsap.set(prevSection, { zIndex: prevIndex + 1 })
-          setCurrentSectionIndex(prevIndex)
-          setIsTransitioning(false)
-        },
-      })
-    }
-  }
-
-  // Global navigation handlers
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault()
-        animateToNext()
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault()
-        animateToPrevious()
-      }
-    }
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault()
-
-      if (e.deltaY > 0) {
-        // Scroll down - go to next section (or loop to first)
-        animateToNext()
-      } else if (e.deltaY < 0) {
-        // Scroll up - go to previous section (or loop to last)
-        animateToPrevious()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    window.addEventListener("wheel", handleWheel, { passive: false })
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-      window.removeEventListener("wheel", handleWheel)
-    }
-  }, [currentSectionIndex, isTransitioning])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     // Only respond to left mouse button or touch
@@ -384,12 +388,12 @@ export default function HomePage() {
     const distance = pointerStartY - pointerEndY;
     const isUpSwipe = distance > 50;
     const isDownSwipe = distance < -50;
-    if (isUpSwipe && currentSection < videoSections.length - 1) {
+    if (isUpSwipe) {
       setScrollDirection('down');
-      triggerTransition(currentSection + 1);
-    } else if (isDownSwipe && currentSection > 0) {
+      animateToNext();
+    } else if (isDownSwipe) {
       setScrollDirection('up');
-      triggerTransition(currentSection - 1);
+      animateToPrevious();
     }
     setPointerStartY(null);
     setPointerEndY(null);
@@ -491,44 +495,47 @@ export default function HomePage() {
         </div>
       )}
 
+
+
+            {/* Navigation - moved outside main content */}
+      <nav
+        className={`navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent ${
+          isLoading ? 'opacity-0' : 'opacity-100'
+        }`}>
+        <Navigation
+          currentSection={currentSection}
+          totalSections={videoSections.length}
+          onNavigate={navigateToSection}
+        />
+      </nav>
+
       {/* Main Content Animation */}
       <div className="relative">
         {/* Curtain Reveal Animation */}
-
-        <nav
-            className={`navigation fixed top-0 left-0 right-0 z-[1000] transition-all duration-1000 bg-transparent ${
-              isLoading ? 'opacity-0' : 'opacity-100'
-            }`}>
-            <Navigation
-              currentSection={currentSection}
-              totalSections={videoSections.length}
-              onNavigate={navigateToSection}
-            />
-          </nav>
-        <div
+          <div
           className={`fixed inset-0 z-[1500] bg-black transition-transform duration-1000 ease-in-out pointer-events-none
             ${showCurtain ? 'translate-y-0' : '-translate-y-full'}`}
           style={{ willChange: 'transform' }}
         />
         {/* Main Content Animation */}
         {videoSections.map((section, index) => (
-        <VideoSection
-          key={section.id}
+          <VideoSection
           ref={(el) => {
             sectionsRef.current[index] = el
           }}
-          videoSrc={section.videoUrl}
-          index={index + 1}
-          title={section.title}
-          subtitle={section.subtitle}
-          category={section.category}
-          description={section.description}
-          details={section.details}
-          isActive={index === currentSectionIndex}
-          isTransitioning={isTransitioning}
-          totalSections={videoSections.length}
-        />
-      ))}
+            key={section.id}
+            videoSrc={section.videoUrl}
+            index={index + 1}
+            title={section.title}
+            subtitle={section.subtitle}
+            category={section.category}
+            description={section.description}
+            details={section.details}
+            isActive={index === currentSection}
+            isTransitioning={isScrolling}
+            totalSections={videoSections.length}
+          />
+        ))}
        {/* <div className="fixed bottom-8 left-8 text-white z-50" id="lowerDesc">
         <div className="text-sm font-light">
           <span className="mb-1 font-bold">Inspiring brands to be creative</span>

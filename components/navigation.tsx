@@ -8,9 +8,8 @@ import { gsap } from "gsap";
 
 const HamburgerIcon = () => (
   <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-    <rect y="6" width="28" height="2.5" rx="1.25" fill="white" />
-    <rect y="13" width="28" height="2.5" rx="1.25" fill="white" />
-    <rect y="20" width="28" height="2.5" rx="1.25" fill="white" />
+    <rect y="8" width="28" height="2.5" rx="1.25" fill="white" />
+    <rect y="18" width="28" height="2.5" rx="1.25" fill="white" />
   </svg>
 );
 
